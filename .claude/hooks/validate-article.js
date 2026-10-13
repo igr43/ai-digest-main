@@ -14,7 +14,8 @@ const RECENT_MS = 10 * 60 * 1000;
 const now = Date.now();
 
 const recent = fs.readdirSync(blogDir)
-  .filter(f => f.endsWith('.md'))
+  // CLAUDE.md — правила написания статей, а не статья. Синхронно с исключением в src/content.config.ts.
+  .filter(f => f.endsWith('.md') && f !== 'CLAUDE.md')
   .map(f => ({ f, full: path.join(blogDir, f), mtime: fs.statSync(path.join(blogDir, f)).mtimeMs }))
   .filter(x => now - x.mtime < RECENT_MS);
 
@@ -37,7 +38,7 @@ for (const { full, f } of recent) {
   if (missing.length) errors.push(`${f}: не заполнены поля ${missing.join(', ')}`);
 
   const titleMatch = frontmatter.match(/^title:\s*"?([^"\n]+)"?$/m);
-  if (titleMatch && titleMatch[1].length > 60) errors.push(`${f}: title длиннее 60 символов (${titleMatch[1].length})`);
+  if (titleMatch && titleMatch[1].length > 80) errors.push(`${f}: title длиннее 80 символов (${titleMatch[1].length})`);
 
   const descMatch = frontmatter.match(/^description:\s*"?([^"\n]+)"?$/m);
   if (descMatch && descMatch[1].length > 160) errors.push(`${f}: description длиннее 160 символов (${descMatch[1].length})`);

@@ -10,7 +10,7 @@ tools: mcp__tavily__tavily_search, Read
 
 ## Задача
 
-1. Прочитай `CLAUDE.md`, раздел «Редполитика» — темы и критерии.
+1. Прочитай `src/content/blog/CLAUDE.md`, раздел «Тематика» — темы и критерии.
 2. Через `mcp__tavily__tavily_search` найди новости за последние 7 дней по запросам: «new sports nutrition research», «strength training study», «doctors fitness recommendations». Не ограничивайся одним запросом.
 3. Отбрось: дубликаты, маркетинговые анонсы без сути, ре-публикации старых новостей, новости без первоисточника.
 4. Верни 3 темы в формате:
