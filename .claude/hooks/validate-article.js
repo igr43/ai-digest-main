@@ -25,7 +25,8 @@ const required = ['title', 'description', 'pubDate', 'cover', 'source'];
 const errors = [];
 
 for (const { full, f } of recent) {
-  const content = fs.readFileSync(full, 'utf-8');
+  // На Windows с core.autocrlf=true git выдаёт файлы с CRLF — приводим к LF, иначе регулярки ниже не видят frontmatter.
+  const content = fs.readFileSync(full, 'utf-8').replace(/\r\n/g, '\n');
   const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
   if (!fmMatch) { errors.push(`${f}: нет frontmatter`); continue; }
 
