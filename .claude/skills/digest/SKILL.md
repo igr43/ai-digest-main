@@ -37,7 +37,7 @@ The Stop hook `.claude/hooks/validate-article.js` rejects the article if `cover`
 
 Direct push to `main` is blocked by a hook. Publish through the `digest/auto` branch.
 
-- `git checkout -B digest/auto`.
+- Switch to the branch without resetting it: `git checkout digest/auto` if it exists locally, otherwise `git checkout -b digest/auto origin/digest/auto` if it exists on the remote, otherwise `git checkout -b digest/auto main`. Never use `checkout -B`: it resets the branch to the current commit and drops already published articles. Then `git pull --ff-only origin digest/auto` if the remote branch exists.
 - Stage only the article and its cover: `git add src/content/blog/<article-slug>.md src/content/blog/<article-slug>.cover.webp`.
 - Commit in Conventional Commits format, description in Russian, first line up to 72 characters:
   `feat(blog): добавить статью о <short topic>`.

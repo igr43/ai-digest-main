@@ -45,7 +45,7 @@ You write only the subject — which objects are in the frame — in English, on
 - **Avoid objects that attract text and logos:** bottles, jars, packaging, books, notebooks, phones and tablets with screens, sneakers, branded clothing. If one is unavoidable, write `completely blank, no label, no markings`.
 - Dumbbells and plates: `smooth ... with completely blank surfaces and no markings` — otherwise the model writes weights on them.
 - Avoid faces and full bodies. If a person is needed, show a fragment: hands, a forearm, a silhouette.
-- Add `everything fully inside the frame with space around the edges` — the square output is cropped to 16:9.
+- Add `everything fully inside the frame with space around the edges`.
 - No pills, syringes or medical imagery unless the article is about them; no "before/after" bodies.
 
 ## Steps
@@ -58,7 +58,10 @@ You write only the subject — which objects are in the frame — in English, on
    node .claude/skills/cover/generate.mjs <article-slug> "<subject>" --palette <sage|blush|sand|mono>
    ```
 
-   The script calls `@cf/black-forest-labs/flux-1-schnell`, crops the square output to 16:9, and saves `src/content/blog/<article-slug>.cover.webp` (1024x576). It prints the `raw:` path of the source image and the used `crop-top` range.
+   The script calls `@cf/black-forest-labs/flux-2-dev` at 1024x576 and saves `src/content/blog/<article-slug>.cover.webp`. It prints the `raw:` path of the source image.
+
+   **Quota.** Workers AI Free gives 10,000 neurons per day (reset 00:00 UTC). One `flux-2-dev` cover costs about 3,000 neurons, so about 3 generations per day. When the quota runs out, requests fail with an error and nothing is charged.
+   `--model schnell` switches to `flux-1-schnell` (about 100 neurons, square output cropped to 16:9). It fails the checklist much more often — text on objects, broken objects — so use it only when `dev` is out of quota, and say so in the report.
 4. Set `cover: './<article-slug>.cover.webp'` in the article frontmatter. Never put a remote image URL there.
 5. Run the technical check:
 
@@ -78,8 +81,8 @@ You write only the subject — which objects are in the frame — in English, on
    - [ ] The crop does not cut the subject, heads or key objects at the edges.
    - [ ] Nothing misleading or inappropriate for a health publication.
 
-   If only the crop fails, re-crop without regenerating:
-   `node .claude/skills/cover/generate.mjs <article-slug> --from <raw path> --crop-top <N>` (smaller N moves the frame up), then read the image again.
+   If only the crop fails on a `schnell` image, re-crop without regenerating:
+   `node .claude/skills/cover/generate.mjs <article-slug> --from <raw path> --crop-top <N>` (smaller N moves the frame up), then read the image again. `dev` images are already 16:9 and are not cropped.
 
    If anything else fails, adjust the subject to remove the cause and generate again. At most 3 generations per article.
 7. Report the file path and which checklist items needed a retry.
@@ -87,5 +90,5 @@ You write only the subject — which objects are in the frame — in English, on
 ## If something fails
 
 - Credentials are missing (exit code 3) → ask the user to set `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`; do not ask them to paste tokens into the chat.
-- Cloudflare returns an error (exit code 4) → report the error as is, do not invent a file.
+- Cloudflare returns an error (exit code 4) → report the error as is, do not invent a file. A daily quota error on `dev` → either wait until 00:00 UTC or retry with `--model schnell`; tell the user which.
 - Three generations still fail the visual check → keep the best one uncommitted, report which items failed, and let the user decide.

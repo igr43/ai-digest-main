@@ -1,11 +1,13 @@
 // Генерация обложки через Cloudflare Workers AI в едином стиле дайджеста.
 //
-// node .claude/skills/cover/generate.mjs <article-slug> "<subject>" [--palette sage|blush|sand|mono] [--crop-top N] [--from <raw.jpg>]
+// node .claude/skills/cover/generate.mjs <article-slug> "<subject>" [--palette sage|blush|sand|mono] [--model dev|schnell] [--crop-top N] [--from <raw>]
 //
 // <subject> — только сюжет кадра по-английски (какие предметы в кадре). Стиль и палитра добавляются здесь,
 // чтобы все обложки выглядели одной серией. Не дублируй стилевые слова и цвета в <subject>.
 // --palette     — одна из PALETTES, по умолчанию sage.
-// --crop-top N  — смещение кадра 16:9 сверху в пикселях (0–448). По умолчанию центр.
+// --model       — dev (по умолчанию): flux-2-dev, сразу 1024x576, ~3000 нейронов из 10 000 бесплатных в сутки.
+//                 schnell: flux-1-schnell, квадрат с обрезкой, ~100 нейронов. Запасной вариант, качество деталей хуже.
+// --crop-top N  — для квадратного исходника: смещение кадра 16:9 сверху в пикселях. По умолчанию центр.
 // --from FILE   — не генерировать заново, а переобрезать уже скачанный исходник.
 //
 // Ключи: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN из окружения.
@@ -66,25 +68,37 @@ if (!rawPath) {
     process.exit(2);
   }
   const prompt = `${subject.trim().replace(/\.?$/, '.')} ${STYLE} ${PALETTES[palette]}`;
-  const res = await fetch(
-    `https://api.cloudflare.com/client/v4/accounts/${acc}/ai/run/@cf/black-forest-labs/flux-1-schnell`,
-    {
+  const model = opt('--model') ?? 'dev';
+  const base = `https://api.cloudflare.com/client/v4/accounts/${acc}/ai/run/@cf/black-forest-labs`;
+  let res;
+  if (model === 'dev') {
+    const form = new FormData();
+    form.append('prompt', prompt);
+    form.append('width', String(W));
+    form.append('height', String(H));
+    form.append('steps', '20');
+    res = await fetch(`${base}/flux-2-dev`, { method: 'POST', headers: { Authorization: `Bearer ${tok}` }, body: form });
+  } else if (model === 'schnell') {
+    res = await fetch(`${base}/flux-1-schnell`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, steps: 8 }),
-    },
-  );
+    });
+  } else {
+    console.error(`неизвестная модель "${model}", есть: dev, schnell`);
+    process.exit(2);
+  }
   const json = await res.json().catch(() => ({}));
   if (!res.ok || !json.success || !json.result?.image) {
     console.error(`Cloudflare HTTP ${res.status}: ${JSON.stringify(json.errors ?? json)}`);
     process.exit(4);
   }
-  rawPath = join(mkdtempSync(join(tmpdir(), 'cover-')), 'raw.jpg');
+  rawPath = join(mkdtempSync(join(tmpdir(), 'cover-')), 'raw.img');
   writeFileSync(rawPath, Buffer.from(json.result.image, 'base64'));
 }
 
 const meta = await sharp(rawPath).metadata();
-const h = Math.round((meta.width * 9) / 16);
+const h = Math.min(meta.height, Math.round((meta.width * 9) / 16));
 const maxTop = meta.height - h;
 const top = Math.min(maxTop, Math.max(0, Number(opt('--crop-top') ?? Math.round(maxTop / 2))));
 
