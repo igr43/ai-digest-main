@@ -8,7 +8,8 @@
 - SSR-адаптера пока нет — чистый статический билд. Если фаза курса потребует серверную логику, понадобится `@astrojs/vercel` и `output: 'server' | 'hybrid'` в `astro.config.mjs`.
 - TypeScript strict (`astro/tsconfigs/strict` + `strictNullChecks`).
 - Vercel (автодеплой на push в `main`).
-- MCP: Tavily (поиск новостей и исследований), Replicate (обложки).
+- MCP: Tavily (поиск новостей и исследований).
+- Обложки: Cloudflare Workers AI (`@cf/black-forest-labs/flux-1-schnell`) через REST API, без MCP. Ключи — в переменных окружения `CLOUDFLARE_ACCOUNT_ID` и `CLOUDFLARE_API_TOKEN`. Порядок генерации — в `.claude/skills/cover/SKILL.md`.
 
 ## Команды
 
