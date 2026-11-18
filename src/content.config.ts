@@ -14,6 +14,8 @@ const blog = defineCollection({
 			pubDate: z.coerce.date(),
 			updatedDate: z.coerce.date().optional(),
 			heroImage: z.optional(image()),
+			// Обложка статьи: локальный ./<slug>.cover.webp. У старых статей cover: '' — считаем, что обложки нет.
+			cover: z.preprocess((v) => (v === '' || v === null ? undefined : v), z.optional(image())),
 			source: z.string().url().optional(),
 			tags: z.array(z.string()).default([]),
 		}),
