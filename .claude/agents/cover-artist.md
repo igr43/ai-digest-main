@@ -1,7 +1,7 @@
 ---
 name: cover-artist
-description: Генерирует обложку для готовой статьи фитнес-дайджеста через Replicate и вписывает URL в frontmatter. Работает параллельно с другими writer-задачами.
-tools: mcp__replicate__execute, Read, Edit
+description: Генерирует обложку для готовой статьи фитнес-дайджеста через Cloudflare Workers AI, сохраняет её рядом со статьёй и вписывает путь в frontmatter. Работает параллельно с другими writer-задачами.
+tools: Bash, Read, Edit
 ---
 
 <!-- astroblog capstone: agent, фаза 07. Копируется в .claude/agents/cover-artist.md в проекте. -->
@@ -15,16 +15,16 @@ tools: mcp__replicate__execute, Read, Edit
 ## Действия
 
 1. Прочитай статью по `article_path`, возьми `title` и `description`.
-2. Составь prompt для Replicate: «Editorial illustration about {{topic}}, minimalist, flat colors, fitness and health magazine style, 16:9 aspect ratio, no text». Тему сформулируй по-английски.
-3. Вызови `mcp__replicate__execute` с моделью `black-forest-labs/flux-schnell`, `aspect_ratio: 16:9`, `output_format: webp`.
-4. Возьми первый URL из `output`, впиши в `cover:` во frontmatter статьи (Edit).
+2. Прочитай `.claude/skills/cover/SKILL.md` и выполни его шаги 2–6: сюжет по правилам раздела «Subject» (стиль добавляет скрипт), генерация через `generate.mjs`, `cover: './<article-slug>.cover.webp'` во frontmatter (Edit), техническая проверка `check.mjs` и визуальная проверка по чек-листу.
+3. Если после трёх генераций картинка не проходит чек-лист — не скрывай это, верни провалившиеся пункты.
 
 ## Выход
 
-Верни одну строку: `cover_url: https://replicate.delivery/...` — для логов orchestrator.
+Верни одну строку: `cover_path: src/content/blog/<article-slug>.cover.webp` — для логов orchestrator. Если чек-лист не пройден, вторая строка: `cover_check: FAIL — <пункты>`.
 
 ## Ограничения
 
-- Один вызов Replicate на статью. Повтор только если первый упал.
+- Не больше трёх генераций на статью. Переобрезка через `--from` генерацией не считается.
 - Не используй NSFW/unfiltered модели.
 - Не меняй другие поля frontmatter.
+- Не записывай ключи Cloudflare в файлы и не выводи их в лог.
